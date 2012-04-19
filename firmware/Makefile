@@ -11,6 +11,9 @@ all: 	begin gccversion \
 # Program the device w/various programs
 program-flicker2: flicker2.hex
 
+
+program-servotest: servotest.hex
+
 # this programs the dependant hex file using our default avrdude flags
 program-%:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)$<
