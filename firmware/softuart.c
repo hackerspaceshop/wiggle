@@ -37,11 +37,13 @@ void my_delay_ms(uint16_t delay)
 	}
 }
 
-// -------------------- <SOFT-UART> --------------------
+/*********************************************************/
+/*                      <SOFT-UART>                      */
 
 // 9600 Baud on pin B0
+#define SOFTUART_DDR  DDRB
 #define SOFTUART_PORT PORTB
-#define SOFTUART_BITV _BV(0)
+#define SOFTUART_BITV _BV(2)
 #define SOFTUART_DELAY my_delay_us(80);
 
 static inline void softuart_send_bit(uint8_t bit)
@@ -70,16 +72,16 @@ void softuart_send_byte(uint8_t byte)
 void softuart_setup()
 {
 	// convert PORTx to DDRx and mark pin as output
-	*(uint8_t*)(_SFR_IO_ADDR(SOFTUART_PORT) - 1) |= SOFTUART_BITV;
+	SOFTUART_DDR |= SOFTUART_BITV;
 	SOFTUART_PORT |= SOFTUART_BITV;
 }
 
-// -------------------- </SOFT-UART> -------------------
+/*                      </SOFT-UART>                     */
+/*********************************************************/
 
 int main(void)
 {
-	DDRB |= 1;
-	PORTB |= 1;
+	softuart_setup();
 	while (1) {
 		softuart_send_byte('H');
 		softuart_send_byte('e');
