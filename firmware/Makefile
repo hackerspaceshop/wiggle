@@ -8,7 +8,7 @@ AVRDUDE_PORT = usb
 all: 	begin gccversion \
 	blink.hex flicker2.hex \
 	servodirect.hex servotest.hex \
-	softuart.hex finished end
+	softuart.hex i2cdemo.hex finished end
 
 # Program the device w/various programs
 program-blink: blink.hex
@@ -16,6 +16,7 @@ program-flicker2: flicker2.hex
 program-servodirect: servodirect.hex
 program-servotest: servotest.hex
 program-softuart: softuart.hex
+program-i2cdemo: i2cdemo.hex
 
 # this programs the dependant hex file using our default avrdude flags
 program-%:
@@ -158,8 +159,9 @@ gccversion :
 %.elf: %.o
 	@echo
 	@echo $(MSG_LINKING) $@
-	$(CC) $(ALL_CFLAGS) $< --output $@ $(LDFLAGS)
+	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 
+i2cdemo.elf: i2cdemo.o i2cmaster.o
 
 # Compile: create object files from C source files.
 %.o : %.c
