@@ -84,7 +84,7 @@ void softuart_send_hex_byte(uint8_t byte)
 	softuart_send_hex_nibble(byte & 0x0f);
 }
 
-void softuart_setup()
+void softuart_setup(void)
 {
 	// convert PORTx to DDRx and mark pin as output
 	SOFTUART_DDR |= SOFTUART_BITV;
@@ -96,7 +96,7 @@ void softuart_setup()
 
 #define MMA7660FC_ADDR 0x98
 
-uint8_t read_accel_reg(uint8_t addr)
+uint8_t accel_read_reg(uint8_t addr)
 {
 	uint8_t ret;
 	i2c_start_wait(MMA7660FC_ADDR + I2C_WRITE);
@@ -107,25 +107,61 @@ uint8_t read_accel_reg(uint8_t addr)
 	return ret;
 }
 
+int8_t accel_read_ireg(uint8_t addr)
+{
+	int8_t ret = accel_read_reg(addr) & 0x3f;
+	if (ret & 0x20)
+		ret |= 0xc0;
+	return ret;
+}
+
+void accel_write_reg(uint8_t addr, uint8_t data)
+{
+	i2c_start_wait(MMA7660FC_ADDR + I2C_WRITE);
+	i2c_write(addr);
+	i2c_write(data);
+	i2c_stop();
+}
+
+void accel_setup(void)
+{
+	accel_write_reg(0x07, 0x00);
+
+	accel_write_reg(0x05, 0x00);
+	accel_write_reg(0x06, 0x00);
+	accel_write_reg(0x08, 0x03);
+	accel_write_reg(0x09, 0x00);
+	accel_write_reg(0xA0, 0x00);
+
+	accel_write_reg(0x07, 0x01);
+}
+
 int main(void)
 {
 	i2c_init();
+	accel_setup();
 	softuart_setup();
 
+	DDRB |= 1;
+	PORTB &= ~1;
+
 	while (1) {
-		softuart_send_byte('-');
-		softuart_send_byte('-');
-		softuart_send_byte('-');
+		for (uint8_t i = 0; i < 11; i++) {
+			if (i > 0)
+				softuart_send_byte(' ');
+			softuart_send_hex_byte(accel_read_reg(i));
+		}
 		softuart_send_byte('\r');
 		softuart_send_byte('\n');
 		for (uint8_t i = 0; i < 11; i++) {
-			softuart_send_hex_byte(i);
-			softuart_send_byte(' ');
-			softuart_send_hex_byte(read_accel_reg(i));
-			softuart_send_byte('\r');
-			softuart_send_byte('\n');
+			int8_t xout = accel_read_ireg(0x00);
+			int8_t yout = accel_read_ireg(0x01);
+			if (xout < -4 || xout > 4 || yout < -4 || yout > 4)
+				PORTB |= 1;
+			else
+				PORTB &= ~1;
+			my_delay_ms(100);
 		}
-		my_delay_ms(1000);
 	}
 	return 0;
 }
