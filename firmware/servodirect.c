@@ -37,7 +37,7 @@ void my_delay_ms(uint16_t delay)
 	}
 }
 
-void setvervo(uint16_t pos)
+void setservo(uint16_t pos)
 {
 	PORTB |= 1;
 	my_delay_us(550+pos*6);
@@ -53,30 +53,30 @@ int main(void)
 #if 0
 	while (1)
 	{
-		setvervo(0);
+		setservo(0);
 		my_delay_ms(980);
-		setvervo(0);
+		setservo(0);
 		my_delay_ms(980);
 		for (uint8_t i = 0; i < 50; i++)
-			setvervo(0);
+			setservo(0);
 
-		setvervo(255);
+		setservo(255);
 		my_delay_ms(980);
-		setvervo(255);
+		setservo(255);
 		my_delay_ms(980);
 		for (uint8_t i = 0; i < 50; i++)
-			setvervo(255);
+			setservo(255);
 	}
 #else
 	while (1) {
 		for (uint16_t i = 0; i < 64; i++)
-			setvervo(0);
+			setservo(0);
 		for (uint16_t i = 0; i < 255; i++)
-			setvervo(i);
+			setservo(i);
 		for (uint16_t i = 0; i < 64; i++)
-			setvervo(255);
+			setservo(255);
 		for (uint16_t i = 0; i < 255; i++)
-			setvervo(255-i);
+			setservo(255-i);
 	}
 #endif
 

@@ -2,6 +2,10 @@
 #include <util/delay.h>
 #include "i2cmaster.h"
 
+/*********************************************************/
+/*                    Delay functions                    */
+/*********************************************************/
+
 #if 0
 void my_delay_us(uint16_t delay)
 {
@@ -39,7 +43,8 @@ void my_delay_ms(uint16_t delay)
 }
 
 /*********************************************************/
-/*                      <SOFT-UART>                      */
+/*                       SOFT-UART                       */
+/*********************************************************/
 
 // 9600 Baud on pin B0
 #define SOFTUART_DDR  DDRB
@@ -91,7 +96,8 @@ void softuart_setup(void)
 	SOFTUART_PORT |= SOFTUART_BITV;
 }
 
-/*                      </SOFT-UART>                     */
+/*********************************************************/
+/*                   I2C Accelerometer                   */
 /*********************************************************/
 
 #define MMA7660FC_ADDR 0x98
@@ -136,31 +142,51 @@ void accel_setup(void)
 	accel_write_reg(0x07, 0x01);
 }
 
+/*********************************************************/
+/*                        Servos                         */
+/*********************************************************/
+
+// num is 1 or 2
+void servo_pulse(uint8_t num, uint16_t pos)
+{
+	PORTB |= num;
+	my_delay_us(550+pos*6);
+	PORTB &= ~num;
+}
+
+void servo_setup(void)
+{
+	DDRB |= 3;
+	PORTB &= ~3;
+}
+
+/*********************************************************/
+/*                         Main                          */
+/*********************************************************/
+
 int main(void)
 {
 	i2c_init();
 	accel_setup();
 	softuart_setup();
+	servo_setup();
 
-	DDRB |= 1;
-	PORTB &= ~1;
+	uint8_t count = 0;
+	while (1)
+	{
+		uint8_t xout = accel_read_sreg(0x00) + 0x20; // range: 0 .. 63
+		uint8_t yout = accel_read_sreg(0x01) + 0x20;
 
-	while (1) {
-		for (uint8_t i = 0; i < 11; i++) {
-			if (i > 0)
-				softuart_send_byte(' ');
-			softuart_send_hex_byte(accel_read_reg(i));
-		}
-		softuart_send_byte('\r');
-		softuart_send_byte('\n');
-		for (uint8_t i = 0; i < 10; i++) {
-			int8_t xout = accel_read_sreg(0x00);
-			int8_t yout = accel_read_sreg(0x01);
-			if (xout < -4 || xout > 4 || yout < -4 || yout > 4)
-				PORTB |= 1;
-			else
-				PORTB &= ~1;
-			my_delay_ms(100);
+		servo_pulse(1, xout * 4);
+		servo_pulse(2, yout * 4);
+		my_delay_ms(20);
+
+		if (count++ % 64 == 0) {
+			softuart_send_hex_byte(xout);
+			softuart_send_byte(' ');
+			softuart_send_hex_byte(yout);
+			softuart_send_byte('\r');
+			softuart_send_byte('\n');
 		}
 	}
 	return 0;
