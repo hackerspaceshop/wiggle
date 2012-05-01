@@ -8,13 +8,14 @@ AVRDUDE_PORT = usb
 all: 	begin gccversion \
 	blink.hex flicker2.hex \
 	servodirect.hex servotest.hex \
-	finished end
+	softuart.hex finished end
 
 # Program the device w/various programs
 program-blink: blink.hex
 program-flicker2: flicker2.hex
 program-servodirect: servodirect.hex
 program-servotest: servotest.hex
+program-softuart: softuart.hex
 
 # this programs the dependant hex file using our default avrdude flags
 program-%:
