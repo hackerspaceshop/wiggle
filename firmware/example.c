@@ -149,15 +149,15 @@ void accel_setup(void)
 // num is 1 or 2
 void servo_pulse(uint8_t num, uint16_t pos)
 {
-	PORTB |= num;
-	my_delay_us(550+pos*6);
 	PORTB &= ~num;
+	my_delay_us(550+pos*6);
+	PORTB |= num;
 }
 
 void servo_setup(void)
 {
 	DDRB |= 3;
-	PORTB &= ~3;
+	PORTB |= 3;
 }
 
 /*********************************************************/
