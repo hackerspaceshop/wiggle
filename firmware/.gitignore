@@ -1,5 +1,3 @@
-.map
-*.lst
 *.hex
 *.elf
 *.o

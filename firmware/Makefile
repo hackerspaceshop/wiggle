@@ -1,5 +1,7 @@
 
-build:
+build: example.hex
+
+example.hex: example.c i2cmaster.S
 	avr-gcc -DF_CPU=9600000UL -mmcu=attiny13 -std=gnu99 -Os -c -o example.o example.c
 	avr-gcc -DF_CPU=9600000UL -mmcu=attiny13 -c -o i2cmaster.o i2cmaster.S
 	avr-gcc -mmcu=attiny13 -o example.elf example.o i2cmaster.o
