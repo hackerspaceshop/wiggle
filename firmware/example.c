@@ -146,7 +146,7 @@ void accel_setup(void)
 /*                        Servos                         */
 /*********************************************************/
 
-// num is 1 or 2
+// num is 1 or 2, pos is approx. in range 0..256
 void servo_pulse(uint8_t num, uint16_t pos)
 {
 	PORTB &= ~num;
