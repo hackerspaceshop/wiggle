@@ -20,7 +20,7 @@ License to be decided yet.
 /*********************************************************/
 
 #if 0
-void my_delay_us(uint16_t delay)
+static void my_delay_us(uint16_t delay)
 {
 	// the step size '5' was determined
 	// using simple experiments.
@@ -28,7 +28,7 @@ void my_delay_us(uint16_t delay)
 		delay -= 5;
 }
 #else
-void my_delay_us(uint16_t delay);
+static void my_delay_us(uint16_t delay);
 __asm__(
 // this is what the compiler generated for
 // my_delay_us(). we `materialized' it to
@@ -44,7 +44,7 @@ __asm__(
 "        ret\n");
 #endif
 
-void my_delay_ms(uint16_t delay)
+static void my_delay_ms(uint16_t delay)
 {
 	while (delay != 0) {
 		// experiments have shown that 1ms is in fact 970us
@@ -73,7 +73,7 @@ static inline void softuart_send_bit(uint8_t bit)
 	SOFTUART_DELAY
 }
 
-void softuart_send_byte(uint8_t byte)
+static void softuart_send_byte(uint8_t byte)
 {
 	// start bit
 	softuart_send_bit(0);
@@ -89,7 +89,7 @@ void softuart_send_byte(uint8_t byte)
 	softuart_send_bit(1);
 }
 
-void softuart_send_hex_nibble(uint8_t nibble)
+static void softuart_send_hex_nibble(uint8_t nibble)
 {
 	if (nibble < 10)
 		softuart_send_byte('0' + nibble);
@@ -97,13 +97,13 @@ void softuart_send_hex_nibble(uint8_t nibble)
 		softuart_send_byte('A' + nibble - 10);
 }
 
-void softuart_send_hex_byte(uint8_t byte)
+static void softuart_send_hex_byte(uint8_t byte)
 {
 	softuart_send_hex_nibble(byte >> 4);
 	softuart_send_hex_nibble(byte & 0x0f);
 }
 
-void softuart_setup(void)
+static void softuart_setup(void)
 {
 	// convert PORTx to DDRx and mark pin as output
 	SOFTUART_DDR |= SOFTUART_BITV;
@@ -117,7 +117,7 @@ void softuart_setup(void)
 
 #define MMA7660FC_ADDR 0x98
 
-uint8_t accel_read_reg(uint8_t addr)
+static uint8_t accel_read_reg(uint8_t addr)
 {
 	uint8_t ret;
 	i2c_start_wait(MMA7660FC_ADDR + I2C_WRITE);
@@ -128,7 +128,7 @@ uint8_t accel_read_reg(uint8_t addr)
 	return ret;
 }
 
-int8_t accel_read_sreg(uint8_t addr)
+static int8_t accel_read_sreg(uint8_t addr)
 {
 	int8_t ret = accel_read_reg(addr) & 0x3f;
 	if (ret & 0x20)
@@ -136,7 +136,7 @@ int8_t accel_read_sreg(uint8_t addr)
 	return ret;
 }
 
-void accel_write_reg(uint8_t addr, uint8_t data)
+static void accel_write_reg(uint8_t addr, uint8_t data)
 {
 	i2c_start_wait(MMA7660FC_ADDR + I2C_WRITE);
 	i2c_write(addr);
@@ -144,7 +144,7 @@ void accel_write_reg(uint8_t addr, uint8_t data)
 	i2c_stop();
 }
 
-void accel_setup(void)
+static void accel_setup(void)
 {
 	accel_write_reg(0x07, 0x00);
 
@@ -162,14 +162,14 @@ void accel_setup(void)
 /*********************************************************/
 
 // num is 1 or 2, pos is approx. in range 0..256
-void servo_pulse(uint8_t num, uint16_t pos)
+static void servo_pulse(uint8_t num, uint16_t pos)
 {
 	PORTB &= ~num;
 	my_delay_us(550+pos*6);
 	PORTB |= num;
 }
 
-void servo_setup(void)
+static void servo_setup(void)
 {
 	DDRB |= 3;
 	PORTB |= 3;
@@ -177,7 +177,7 @@ void servo_setup(void)
 
 
 
-void move_ear(uint8_t servo, int degree)
+static void move_ear(uint8_t servo, int degree)
 {
  // send servo pulse to servo1 or servo2 5 times
  for(int i=0;i<10;i++)
@@ -191,7 +191,7 @@ void move_ear(uint8_t servo, int degree)
 
 
 
-void eardance()
+static void eardance()
 {
 
  int v=4;
@@ -222,7 +222,7 @@ void eardance()
 
 
 #define HOMEPOS 10
-void wiggle(uint8_t servo)
+static void wiggle(uint8_t servo)
 {
  move_ear(servo,HOMEPOS);
  
@@ -239,7 +239,7 @@ void wiggle(uint8_t servo)
 }
 
 // both servos reset to zero.
-void reset_ears()
+static void reset_ears()
 {
   move_ear(1,HOMEPOS);
   move_ear(2,HOMEPOS);
@@ -247,12 +247,12 @@ void reset_ears()
 
 
 
-int STATE = 0;
+static int STATE = 0;
 #define SORRY_EARS 1
 
 
 // ohren hängen lassen :(
-void sorry_ears()
+static void sorry_ears()
 {
    STATE = SORRY_EARS;
    move_ear(1,1);
