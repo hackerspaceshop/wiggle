@@ -11,6 +11,7 @@ License to be decided yet.
 */
 
 #undef DEBUG_RS232
+#define DANCE_LR_COUNT 2
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -266,6 +267,7 @@ int main(void)
 	uint8_t head_backward = 0;
 	uint8_t head_left = 0;
 	uint8_t head_right = 0;
+	uint8_t left_right_count = 0;
 
 	while (1)
 	{
@@ -287,13 +289,13 @@ int main(void)
 				reset_ears();
 				last_wiggle = 0;
 			} else if (head_left > 10) {
-				if (last_wiggle < 0)
+				if (last_wiggle < 0 && ++left_right_count >= DANCE_LR_COUNT)
 					eardance();
 				else
 					wiggle(1);
 				last_wiggle = +100;
 			} else if (head_right > 10) {
-				if (last_wiggle > 0)
+				if (last_wiggle > 0 && ++left_right_count >= DANCE_LR_COUNT)
 					eardance();
 				else
 					wiggle(2);
@@ -308,6 +310,8 @@ int main(void)
 
 		if (last_wiggle != 0)
 			last_wiggle += last_wiggle > 0 ? -1 : +1;
+		else
+			left_right_count = 0;
 #else
 		if (cycle_count++ % 64 == 0) {
 			softuart_send_hex_byte(xout);
