@@ -9,7 +9,7 @@ example.hex: example.c i2cmaster.S
 	avr-size example.elf example.hex
 
 prog:
-	avrdude -p attiny13 -P usb  -c usbtiny -U flash:w:example.hex
+	sudo avrdude -p attiny13 -P usb  -c usbtiny -U flash:w:example.hex
 
 clean:
 	rm -f example.o i2cmaster.o example.elf example.hex
