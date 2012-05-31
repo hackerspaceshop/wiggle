@@ -8,8 +8,9 @@ based on example code from clifford wolf
 
 License to be decided yet.
 
-
 */
+
+#undef DEBUG_RS232
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -28,7 +29,7 @@ static void my_delay_us(uint16_t delay)
 		delay -= 5;
 }
 #else
-static void my_delay_us(uint16_t delay);
+void my_delay_us(uint16_t delay);
 __asm__(
 // this is what the compiler generated for
 // my_delay_us(). we `materialized' it to
@@ -59,7 +60,8 @@ static void my_delay_ms(uint16_t delay)
 /*                       SOFT-UART                       */
 /*********************************************************/
 
-/*
+#ifdef DEBUG_RS232
+
 // 9600 Baud on pin B0
 #define SOFTUART_DDR  DDRB
 #define SOFTUART_PORT PORTB
@@ -109,7 +111,8 @@ static void softuart_setup(void)
 	SOFTUART_DDR |= SOFTUART_BITV;
 	SOFTUART_PORT |= SOFTUART_BITV;
 }
-*/
+
+#endif
 
 /*********************************************************/
 /*                   I2C Accelerometer                   */
@@ -175,104 +178,57 @@ static void servo_setup(void)
 	PORTB |= 3;
 }
 
-
-
 static void move_ear(uint8_t servo, int degree)
 {
- // send servo pulse to servo1 or servo2 5 times
- for(int i=0;i<10;i++)
- {
-                servo_pulse(servo, degree * 4);
-                my_delay_ms(20);
- }
+	// send servo pulse to servo1 or servo2 10 times
+	for (uint8_t i = 0; i < 10; i++) {
+		servo_pulse(servo, degree * 4);
+		my_delay_ms(20);
+	}
 }
-
-
-
-
 
 static void eardance()
 {
+	uint8_t v = 4;
 
- int v=4;
-
- for (int i=0;i<v;i++)
- { 
-  move_ear(1,i);
-  move_ear(2,v*5-i); 
-  move_ear(1,v*5-i);
-  move_ear(2,i);
- }
-
-
+	for (uint8_t i = 0; i < v; i++) {
+		move_ear(1, i);
+		move_ear(2, v * 5 - i);
+		move_ear(1, v * 5 - i);
+		move_ear(2, i);
+	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #define HOMEPOS 10
 static void wiggle(uint8_t servo)
 {
- move_ear(servo,HOMEPOS);
- 
- move_ear(servo,40);
- my_delay_ms(50);
-/*
- move_ear(servo,HOMEPOS);
- my_delay_ms(100);
- move_ear(servo,40);
- my_delay_ms(50);
-*/
- move_ear(servo,HOMEPOS);
- 
+	move_ear(servo, HOMEPOS);
+
+	move_ear(servo, 40);
+	my_delay_ms(50);
+#if 0
+	move_ear(servo,HOMEPOS);
+	my_delay_ms(100);
+	move_ear(servo,40);
+	my_delay_ms(50);
+#endif
+	move_ear(servo, HOMEPOS);
+
 }
 
 // both servos reset to zero.
 static void reset_ears()
 {
-  move_ear(1,HOMEPOS);
-  move_ear(2,HOMEPOS);
+	move_ear(1, HOMEPOS);
+	move_ear(2, HOMEPOS);
 }
-
-
-
-static int STATE = 0;
-#define SORRY_EARS 1
-
 
 // ohren hängen lassen :(
 static void sorry_ears()
 {
-   STATE = SORRY_EARS;
-   move_ear(1,1);
-   move_ear(2,1);
+	move_ear(1, 1);
+	move_ear(2, 1);
 }
-
-
-/*
- GLOBALS
-
-not used my be deleted
-leace here for inspiration 
-
-#define STATE_RANDOM_EARDANCE 3
-#define STATE_KUNGFOO_EARS  5 
-
-int STATE=0;
-
-
-*/
 
 
 /*********************************************************/
@@ -283,111 +239,84 @@ int main(void)
 {
 	i2c_init();
 	accel_setup();
-//	softuart_setup();
 	servo_setup();
-
-	uint8_t count = 0;
-	
 	reset_ears();
 
+#ifdef DEBUG_RS232
+	uint8_t cycle_count = 0;
+	softuart_setup();
+	softuart_send_byte('-');
+	softuart_send_byte('-');
+	softuart_send_byte('-');
+	softuart_send_byte('\r');
+	softuart_send_byte('\n');
+#endif
 
-       // this can be inside one byte.. 
-        uint8_t head_forward=0;
-        uint8_t head_backward=0;
-        uint8_t head_left=0;
-        uint8_t head_right=0;
-
+	// this can be inside one byte.. 
+	int8_t last_wiggle = 0;
+	uint8_t was_sorry = 0;
+	uint8_t head_forward = 0;
+	uint8_t head_backward = 0;
+	uint8_t head_left = 0;
+	uint8_t head_right = 0;
 
 	while (1)
 	{
+		int8_t xout = accel_read_sreg(0x00); // range: -32 .. 31
+		int8_t yout = accel_read_sreg(0x01);
 
-		uint8_t xout = accel_read_sreg(0x00) + 0x20; // range: 0 .. 63
-		uint8_t yout = accel_read_sreg(0x01) + 0x20;
+		head_forward  = (xout > +10 && head_forward  < 200) ? head_forward+1  : 0;
+		head_backward = (xout < -10 && head_backward < 200) ? head_backward+1 : 0;
+		head_left     = (yout > +10 && head_left     < 200) ? head_left+1     : 0;
+		head_right    = (yout < -10 && head_right    < 200) ? head_right+1    : 0;
 
+#ifndef DEBUG_RS232
+		if (head_forward > 50) {
+			was_sorry = 1;
+			sorry_ears();
+		} else {
+			if (head_backward > 10) {
+				reset_ears();
+			} else if (head_left > 10) {
+				if (last_wiggle < 0)
+					eardance();
+				else
+					wiggle(1);
+				last_wiggle = +100;
+			} else if (head_right > 10) {
+				if (last_wiggle > 0)
+					eardance();
+				else
+					wiggle(2);
+				last_wiggle = -100;
+			} else {
+				if (was_sorry)
+					reset_ears();
+				my_delay_ms(20);
+				was_sorry = 0;
+			}
+		}
 
-
-
-
-
-
-
-
-        if(xout >45)
-        {
-
-           my_delay_ms(5);
- 
-           //head hangsbackwards 
-           head_backward+=1;
-
-
-           if(head_forward>10)	
-               eardance();
-
-           head_forward=0;
-
-         }
-
-
-
-         //head hangs forward
-
-         if(xout < 25)
-         {
-           my_delay_ms(5);
-           head_forward+=1;
-
-           if(head_forward>50)
-            sorry_ears();
-          
-          // reset backward state
-           head_backward=0;
-         }
-         else if (STATE == SORRY_EARS)
-          reset_ears();
-
-
-
-
-         if(yout < 25)
-         {
-          my_delay_ms(5);
-          //head hangs left 
-           head_left+=1;
-          // reset right state
-           head_right=0;
-           if(head_left >100)
-            wiggle(1);
-         }
-
-
-         //head hangs left 
-         if(yout > 45)
-         {
-           my_delay_ms(5);
-           head_right+=1;
-
-          // reset right state
-           head_left=0;
-           if(head_right >100)
-            wiggle(2);
-
-         }
-
-
-
-
-/*
-                if (count++ % 64 == 0) {
+		if (last_wiggle != 0)
+			last_wiggle += last_wiggle > 0 ? -1 : +1;
+#else
+		if (cycle_count++ % 64 == 0) {
 			softuart_send_hex_byte(xout);
 			softuart_send_byte(' ');
 			softuart_send_hex_byte(yout);
+			softuart_send_byte(' ');
+			softuart_send_hex_byte(head_forward);
+			softuart_send_byte(' ');
+			softuart_send_hex_byte(head_backward);
+			softuart_send_byte(' ');
+			softuart_send_hex_byte(head_left);
+			softuart_send_byte(' ');
+			softuart_send_hex_byte(head_right);
 			softuart_send_byte('\r');
 			softuart_send_byte('\n');
 		}
-*/
-
+#endif
 	}
+
 	return 0;
 }
-
