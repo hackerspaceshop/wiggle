@@ -9,7 +9,7 @@ wiggle.hex: wiggle.c i2cmaster.S
 	avr-size wiggle.elf wiggle.hex
 
 prog: wiggle.hex
-	sudo avrdude -p attiny13 -P usb  -c usbtiny -U flash:w:wiggle.hex
+	sudo avrdude -p attiny13 -P usb  -c usbtiny -U flash:w:wiggle.hex -U lfuse:w:0x6a:m -U hfuse:w:0xfb:m
 
 clean:
 	rm -f wiggle.o i2cmaster.o wiggle.elf wiggle.hex

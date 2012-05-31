@@ -183,7 +183,7 @@ static void servo_setup(void)
 	PORTB |= 3;
 }
 
-static void move_ear(uint8_t servo, int degree)
+static void move_ear(uint8_t servo, uint8_t degree)
 {
 	// send servo pulse to servo1 or servo2 10 times
 	for (uint8_t i = 0; i < 10; i++) {
@@ -204,7 +204,7 @@ static uint8_t rng() {
 static void eardance()
 {
 	for (uint8_t i = 0; i < 10; i++) {
-	uint8_t v = rng() & 63;
+		uint8_t v = rng() & 63;
 		move_ear(1, v);
 		move_ear(2, 64-v);
 	}
@@ -242,6 +242,16 @@ static void sorry_ears()
 
 int main(void)
 {
+	// LED ON
+	DDRB |= _BV(2);
+	PORTB |= _BV(2);
+	my_delay_ms(500);
+
+	// LED OFF
+	DDRB &= ~_BV(2);
+	PORTB &= ~_BV(2);
+	my_delay_ms(500);
+
 	i2c_init();
 	accel_setup();
 	servo_setup();
