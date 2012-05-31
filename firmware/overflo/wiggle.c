@@ -187,16 +187,37 @@ static void move_ear(uint8_t servo, int degree)
 	}
 }
 
+
+static uint32_t xorshift32() {
+  static uint32_t x = 314159265;
+  x ^= x << 13;
+  x ^= x >> 17;
+  x ^= x << 5;
+  return x;
+}
+
+
 static void eardance()
 {
+#if 1
 	uint8_t v = 4;
-
 	for (uint8_t i = 0; i < v; i++) {
 		move_ear(1, i);
 		move_ear(2, v * 5 - i);
 		move_ear(1, v * 5 - i);
 		move_ear(2, i);
 	}
+#else
+	for (uint8_t i = 0; i < 10; i++) {
+        	uint8_t v = (xorshift32() & 31);
+		move_ear(2, v);
+		move_ear(1, 0 );
+                my_delay_ms(800);
+                move_ear(2, 0);
+                move_ear(1, v );
+                my_delay_ms(800);
+	}
+#endif
 }
 
 #define HOMEPOS 10
