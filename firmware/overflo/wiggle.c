@@ -187,37 +187,23 @@ static void move_ear(uint8_t servo, int degree)
 	}
 }
 
-
-static uint32_t xorshift32() {
-  static uint32_t x = 314159265;
-  x ^= x << 13;
-  x ^= x >> 17;
-  x ^= x << 5;
-  return x;
+// LFSR polynomial coefficients: 0001001
+// we iterate over the 127 bit long max. lenght sequency in 8 bit steps
+static uint8_t rng() {
+	static uint8_t state = 1;
+	for (uint8_t i = 0; i < 8; i++)
+		state = (state >> 1) | ((!(state&8) != !(state&1)) << 6);
+	return state;
 }
-
 
 static void eardance()
 {
-#if 1
-	uint8_t v = 4;
-	for (uint8_t i = 0; i < v; i++) {
-		move_ear(1, i);
-		move_ear(2, v * 5 - i);
-		move_ear(1, v * 5 - i);
-		move_ear(2, i);
-	}
-#else
 	for (uint8_t i = 0; i < 10; i++) {
-        	uint8_t v = (xorshift32() & 31);
-		move_ear(2, v);
-		move_ear(1, 0 );
-                my_delay_ms(800);
-                move_ear(2, 0);
-                move_ear(1, v );
-                my_delay_ms(800);
+	uint8_t v = rng() & 63;
+		move_ear(1, v);
+		move_ear(2, 64-v);
 	}
-#endif
+	my_delay_ms(200);
 }
 
 #define HOMEPOS 10
@@ -295,9 +281,11 @@ int main(void)
 		if (head_forward > 50) {
 			was_sorry = 1;
 			sorry_ears();
+			last_wiggle = 0;
 		} else {
 			if (head_backward > 10) {
 				reset_ears();
+				last_wiggle = 0;
 			} else if (head_left > 10) {
 				if (last_wiggle < 0)
 					eardance();
