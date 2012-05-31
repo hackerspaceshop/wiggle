@@ -11,6 +11,10 @@ License to be decided yet.
 */
 
 #undef DEBUG_RS232
+
+#define SORRYPOS   1
+#define HOMEPOS   10
+#define ACTIVEPOS 40
 #define DANCE_LR_COUNT 2
 
 #include <avr/io.h>
@@ -207,21 +211,14 @@ static void eardance()
 	my_delay_ms(200);
 }
 
-#define HOMEPOS 10
 static void wiggle(uint8_t servo)
 {
 	move_ear(servo, HOMEPOS);
 
-	move_ear(servo, 40);
+	move_ear(servo, ACTIVEPOS);
 	my_delay_ms(50);
-#if 0
-	move_ear(servo,HOMEPOS);
-	my_delay_ms(100);
-	move_ear(servo,40);
-	my_delay_ms(50);
-#endif
-	move_ear(servo, HOMEPOS);
 
+	move_ear(servo, HOMEPOS);
 }
 
 // both servos reset to zero.
@@ -234,8 +231,8 @@ static void reset_ears()
 // ohren hängen lassen :(
 static void sorry_ears()
 {
-	move_ear(1, 1);
-	move_ear(2, 1);
+	move_ear(1, SORRYPOS);
+	move_ear(2, SORRYPOS);
 }
 
 
