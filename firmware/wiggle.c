@@ -12,9 +12,10 @@ License to be decided yet.
 
 #undef DEBUG_RS232
 
-#define SORRYPOS   1
-#define HOMEPOS   10
-#define ACTIVEPOS 40
+#define SORRYPOS    1
+#define HOMEPOS    30
+#define ACTIVEPOS1 10
+#define ACTIVEPOS2 40
 #define DANCE_LR_COUNT 2
 
 #include <avr/io.h>
@@ -186,12 +187,11 @@ static void servo_setup(void)
 static void move_ear(uint8_t servo, uint8_t degree)
 {
 	// send servo pulse to servo1 or servo2 10 times
+	degree = degree * 4;
+	if (servo == 1)
+		degree = 255 - degree;
 	for (uint8_t i = 0; i < 10; i++) {
-		if(servo == 1 )
-			servo_pulse(servo, degree * 4);
-		else
-	                servo_pulse(servo, 2*HOMEPOS - (degree * 4));
-
+		servo_pulse(servo, degree);
 		my_delay_ms(20);
 	}
 }
@@ -210,19 +210,18 @@ static void eardance()
 	for (uint8_t i = 0; i < 10; i++) {
 		uint8_t v = rng() & 63;
 		move_ear(1, v);
-		move_ear(2, 64-v);
+		move_ear(2, 63-v);
 	}
 	my_delay_ms(200);
 }
 
 static void wiggle(uint8_t servo)
 {
-	move_ear(servo, HOMEPOS);
-
-	move_ear(servo, ACTIVEPOS);
+	move_ear(servo, ACTIVEPOS1);
 	my_delay_ms(50);
 
-	move_ear(servo, HOMEPOS);
+	move_ear(servo, ACTIVEPOS2);
+	my_delay_ms(50);
 }
 
 // both servos reset to zero.
@@ -285,7 +284,7 @@ int main(void)
 		int8_t xout = accel_read_sreg(0x00); // range: -32 .. 31
 		int8_t yout = accel_read_sreg(0x01);
 
-		head_forward  = (xout < -10 && head_forward  < 200) ? head_forward+1  : 0;
+		head_forward  = (xout <  -5 && head_forward  < 200) ? head_forward+1  : 0;
 		head_backward = (xout > +10 && head_backward < 200) ? head_backward+1 : 0;
 		head_left     = (yout > +10 && head_left     < 200) ? head_left+1     : 0;
 		head_right    = (yout < -10 && head_right    < 200) ? head_right+1    : 0;
