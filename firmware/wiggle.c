@@ -187,7 +187,11 @@ static void move_ear(uint8_t servo, uint8_t degree)
 {
 	// send servo pulse to servo1 or servo2 10 times
 	for (uint8_t i = 0; i < 10; i++) {
-		servo_pulse(servo, degree * 4);
+		if(servo == 1 )
+			servo_pulse(servo, degree * 4);
+		else
+	                servo_pulse(servo, 2*HOMEPOS - (degree * 4));
+
 		my_delay_ms(20);
 	}
 }
@@ -281,8 +285,8 @@ int main(void)
 		int8_t xout = accel_read_sreg(0x00); // range: -32 .. 31
 		int8_t yout = accel_read_sreg(0x01);
 
-		head_forward  = (xout > +10 && head_forward  < 200) ? head_forward+1  : 0;
-		head_backward = (xout < -10 && head_backward < 200) ? head_backward+1 : 0;
+		head_forward  = (xout < -10 && head_forward  < 200) ? head_forward+1  : 0;
+		head_backward = (xout > +10 && head_backward < 200) ? head_backward+1 : 0;
 		head_left     = (yout > +10 && head_left     < 200) ? head_left+1     : 0;
 		head_right    = (yout < -10 && head_right    < 200) ? head_right+1    : 0;
 
