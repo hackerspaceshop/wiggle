@@ -8,6 +8,9 @@ wiggle.hex: wiggle.c i2cmaster.S
 	avr-objcopy -O ihex wiggle.elf wiggle.hex
 	avr-size wiggle.elf wiggle.hex
 
+wiggle_cached.hex: wiggle.hex
+	cp wiggle.hex wiggle_cached.hex
+
 prog: wiggle.hex
 	sudo avrdude -p attiny13 -P usb  -c usbtiny -U flash:w:wiggle.hex -U lfuse:w:0x6a:m -U hfuse:w:0xfb:m
 
